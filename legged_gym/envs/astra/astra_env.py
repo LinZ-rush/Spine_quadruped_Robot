@@ -22,7 +22,7 @@ class AstraRobot(LeggedRobot):
         
         # 安全调用父类初始化
         super()._init_buffers()
-        
+
         # ==========================================================
         # 2. 【还原设置】 将维度改回 12 以适配 RL 策略
         # ==========================================================
@@ -43,8 +43,7 @@ class AstraRobot(LeggedRobot):
         self.spine_dof_indices = torch.tensor([i for i, name in enumerate(self.dof_names) if any(k in name for k in self.spine_keywords)], device=self.device, dtype=torch.long)
         self.leg_dof_indices = torch.tensor([i for i in range(self.num_dofs) if i not in self.spine_dof_indices.tolist()], device=self.device, dtype=torch.long)
         
-        print(f"[AstraEnv] Buffer Init Success. Legs: {len(self.leg_dof_indices)}, Spine: {len(self.spine_dof_indices)}")
-
+    
     def _pre_physics_step(self, actions):
         self.actions = actions.clone()
         
@@ -109,3 +108,50 @@ class AstraRobot(LeggedRobot):
             noise_vec[action_end:action_end+187] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
             
         return noise_vec
+    
+    # --- 🛠️ 调试专用函数：打印关节角度 (度数) ---
+    def debug_print_joint_angles(self):
+        import time
+        # 限制打印频率，每 1 秒打印一次，避免刷屏
+        if not hasattr(self, 'last_print_time'):
+            self.last_print_time = 0
+        
+        current_time = time.time()
+        if current_time - self.last_print_time < 1.0:
+            return
+        
+        self.last_print_time = current_time
+
+        print("\n" + "="*60)
+        print(f"{'Joint Name':<30} | {'Config(Deg)':<12} | {'Current(Deg)':<12}")
+        print("-" * 60)
+        
+        # 获取张量数据并转为 CPU numpy 数组
+        current_pos_rad = self.dof_pos[0, :].cpu().numpy() # 取第0个环境
+        default_pos_rad = self.default_dof_pos[0, :].cpu().numpy()
+        
+        for i, name in enumerate(self.dof_names):
+            # 弧度转度数
+            current_deg = current_pos_rad[i] * 180 / 3.14159
+            default_deg = default_pos_rad[i] * 180 / 3.14159
+            
+            # 打印，保留1位小数
+            print(f"[{i:02d}] {name:<25} | {default_deg:>10.1f} | {current_deg:>10.1f}")
+            
+        print("="*60 + "\n")
+
+        # ... (接在 debug_print_joint_angles 函数后面)
+
+    def step(self, actions):
+        # 1. 调用父类原本的 step 逻辑 (物理模拟、计算奖励、重置环境等)
+        #    这样我们不需要自己重写复杂的物理循环
+        obs, privileged_obs, rew, reset, extras = super().step(actions)
+        
+        # 2. 【插入调试】在物理步结束后，打印当前的关节角度
+        #    这将调用上面定义的 debug_print_joint_angles
+        self.debug_print_joint_angles()
+        
+        # 3. 返回父类计算的结果
+        return obs, privileged_obs, rew, reset, extras
+    
+    

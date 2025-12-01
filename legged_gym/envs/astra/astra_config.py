@@ -2,6 +2,7 @@
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
+
 class AstraFlatCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 1
@@ -68,6 +69,7 @@ class AstraFlatCfg(LeggedRobotCfg):
         self_collisions = 1 # 1=disable, 0=enable. 初始调试建议禁用自碰撞
         flip_visual_attachments = False 
         fix_base_link = False # 设为True时将机器人吊在空中测试关节
+        
 
     class rewards(LeggedRobotCfg.rewards):
         # 针对 Flat 地形的奖励微调
