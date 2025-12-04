@@ -51,7 +51,7 @@ task_registry.register( "a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO() )
 task_registry.register( "cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO() )
 #astra
 task_registry.register(
-    name="astra_flat",  
+    name="flat_astra_15dof",  
     task_class=AstraRobot,
     env_cfg=AstraFlatCfg(),
     train_cfg=AstraFlatCfgPPO()
